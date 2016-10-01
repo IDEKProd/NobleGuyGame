@@ -1,0 +1,20 @@
+settings =
+{
+	orientation =
+	{
+		default = "landscape",
+		supported = { "landscape", },
+	},
+	
+	excludeFiles =
+	{
+		android = { "Icon.png", "Icon-Small-*.png"},
+	},
+	android =
+	{
+		usesPermissions =
+		{
+			"android.permission.INTERNET",
+		},
+	},
+}
