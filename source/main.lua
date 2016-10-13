@@ -14,18 +14,28 @@ end
 
 local function gameInit()
 	hideMainMenu()
-	backMountains = display.newGroup() ; backMountains.distanceRatio = 0.3
-	backTrees = display.newGroup() ; backTrees.distanceRatio = 0.6
-	forePlayer = display.newGroup() ; forePlayer.distanceRatio = 1.0
-	foreGround = display.newGroup() ; foreGround.distanceRatio = 1.3
+	backGround1 = display.newGroup()
+	backGround1.x = ccx
+	backGround2 = display.newGroup()
+	backGround2.x = ccx - display.contentWidth
 	-- object declaration
-	character = display.newImageRect("knightBase.png", 240, 656)
+	-- -character
+	local sheetData1 = { width=240, height=656, numFrames=3, sheetContentWidth=720, sheetContentHeight=656 }
+	local knightBase = graphics.newImageSheet( "knightSheet.png", sheetData1 )
+	local characterSequenceData = {
+		{ name = "standing", start = 1, count = 1 },
+		{ name = "walking", frames = {2, 3}, time = 300}
+	}
+	character = display.newSprite(knightBase, characterSequenceData)
 	character.x = ccx ; character.y = ccy
-	character:scale(0.75, 0.75)
-	forePlayer:insert(character)
-	mountains = display.newImageRect("images/Mountain1.jpg", 1920, 1080)
+	character:scale(0.25, 0.25)
+	-- -end character
+	mountains = display.newImageRect("mountains.png", 960, 540)
 	mountains.x = ccx ; mountains.y = ccy
-	backMountains:insert(mountains)
+	mountains2 = display.newImageRect("mountains.png", 960, 540)
+	mountains2.x = ccx ; mountains2.y = ccy
+	backGround1:insert(mountains)
+	backGround2:insert(mountains2)
 	-- sensor declaration
 	leftTouchSensor = display.newRect(ccx/8, ccy, 480, 1080)
 	leftTouchSensor.isVisible = false
@@ -33,8 +43,34 @@ local function gameInit()
 	rightTouchSensor = display.newRect((ccx*2)-(ccx/8), ccy, 480, 1080)
 	rightTouchSensor.isVisible = false
 	rightTouchSensor.isHitTestable = true
+	--fuckery
+	print(display.contentWidth)
+	local function moveLeft()
+		character:setSequence("walking")
+		character:play()
+		print("num1 " .. backGround1.x)
+		print("num2 " .. backGround2.x)
+		backGround1.x = backGround1.x + 5
+		backGround2.x = backGround2.x + 5
+		if backGround1.x == display.contentWidth * 1 then
+			backGround1.x = display.contentWidth * -1
+		end
+		if backGround2.x == display.contentWidth * 1 then
+			backGround2.x = display.contentWidth * -1
+		end
+	end
+	local function runFuncLeft (event)
+		if event.phase == "began" then
+		character:setSequence("walking")
+		character:play()
+			Runtime:addEventListener("enterFrame", moveLeft)
+		elseif (event.phase == "ended") then
+			Runtime:removeEventListener("enterFrame", moveLeft)
+		end
+	end
+	--fuckery
 	-- game event declaration
-	leftTouchSensor:addEventListener("tap", charSelect)
+	leftTouchSensor:addEventListener("touch", runFuncLeft)
 end
 
 function hideMainMenu()
