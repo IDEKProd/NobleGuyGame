@@ -46,10 +46,6 @@ local function gameInit()
 	--fuckery
 	print(display.contentWidth)
 	local function moveLeft()
-		character:setSequence("walking")
-		character:play()
-		print("num1 " .. backGround1.x)
-		print("num2 " .. backGround2.x)
 		backGround1.x = backGround1.x + 5
 		backGround2.x = backGround2.x + 5
 		if backGround1.x == display.contentWidth * 1 then
@@ -61,10 +57,11 @@ local function gameInit()
 	end
 	local function runFuncLeft (event)
 		if event.phase == "began" then
-		character:setSequence("walking")
-		character:play()
+			character:setSequence("walking")
+			character:play()
 			Runtime:addEventListener("enterFrame", moveLeft)
 		elseif (event.phase == "ended") then
+			character:setSequence("standing")
 			Runtime:removeEventListener("enterFrame", moveLeft)
 		end
 	end
