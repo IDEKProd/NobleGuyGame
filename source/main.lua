@@ -27,15 +27,21 @@ local function gameInit()
 		{ name = "walking", frames = {2, 3}, time = 300}
 	}
 	character = display.newSprite(knightBase, characterSequenceData)
-	character.x = ccx ; character.y = ccy
+	character.x = ccx ; character.y = ccy + (ccy/2.065)
 	character:scale(0.25, 0.25)
 	-- -end character
+	-- -mountains
 	mountains = display.newImageRect("mountains.png", 960, 540)
 	mountains.x = ccx ; mountains.y = ccy
 	mountains2 = display.newImageRect("mountains.png", 960, 540)
 	mountains2.x = ccx ; mountains2.y = ccy
 	backGround1:insert(mountains)
 	backGround2:insert(mountains2)
+	-- -end mountains
+	-- -ground
+	groundFloor = display.newImageRect("groundFloor.png", 960, 64)
+	groundFloor.x = ccx ; groundFloor.y = (ccy + (ccy/1.1))
+	-- -end ground
 	-- sensor declaration
 	leftTouchSensor = display.newRect(ccx/8, ccy, 480, 1080)
 	leftTouchSensor.isVisible = false
@@ -43,8 +49,7 @@ local function gameInit()
 	rightTouchSensor = display.newRect((ccx*2)-(ccx/8), ccy, 480, 1080)
 	rightTouchSensor.isVisible = false
 	rightTouchSensor.isHitTestable = true
-	--fuckery
-	print(display.contentWidth)
+	-- Image Scrolling Chunk
 	local function moveLeft()
 		backGround1.x = backGround1.x + 5
 		backGround2.x = backGround2.x + 5
@@ -55,19 +60,41 @@ local function gameInit()
 			backGround2.x = display.contentWidth * -1
 		end
 	end
+	local function moveRight()
+		backGround1.x = backGround1.x - 5
+		backGround2.x = backGround2.x - 5
+		if backGround1.x == display.contentWidth * -1 then
+			backGround1.x = display.contentWidth * 1
+		end
+		if backGround2.x == display.contentWidth * -1 then
+			backGround2.x = display.contentWidth * 1
+		end
+	end
 	local function runFuncLeft (event)
 		if event.phase == "began" then
 			character:setSequence("walking")
 			character:play()
+			character.xScale = 0.25
 			Runtime:addEventListener("enterFrame", moveLeft)
 		elseif (event.phase == "ended") then
 			character:setSequence("standing")
 			Runtime:removeEventListener("enterFrame", moveLeft)
 		end
 	end
-	--fuckery
+	local function runFuncRight (event)
+		if event.phase == "began" then
+			character:setSequence("walking")
+			character:play()
+			character.xScale = -0.25
+			Runtime:addEventListener("enterFrame", moveRight)
+		elseif (event.phase == "ended") then
+			character:setSequence("standing")
+			Runtime:removeEventListener("enterFrame", moveRight)
+		end
+	end
 	-- game event declaration
 	leftTouchSensor:addEventListener("touch", runFuncLeft)
+	rightTouchSensor:addEventListener("touch", runFuncRight)
 end
 
 function hideMainMenu()
