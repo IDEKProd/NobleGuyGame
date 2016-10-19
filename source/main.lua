@@ -2,14 +2,17 @@ local json = require("json")
 
 local ccx = display.contentCenterX
 local ccy = display.contentCenterY
-
-local highscore
-local money
+local charPos = 0
 
 -- internal function declaration
-local function charSelect()
+local function optionsMenu()
 	hideMainMenu()
 	print("It works")
+end
+
+local function getcharPos(num)
+	pos = ccx + num
+	return pos
 end
 
 local function gameInit()
@@ -18,6 +21,14 @@ local function gameInit()
 	backGround1.x = ccx
 	backGround2 = display.newGroup()
 	backGround2.x = ccx - display.contentWidth
+	middGround1 = display.newGroup()
+	middGround1.x = ccx
+	middGround2 = display.newGroup()
+	middGround2.x = ccx - display.contentWidth
+	foreGround1 = display.newGroup()
+	foreGround1.x = ccx
+	foreGround2 = display.newGroup()
+	foreGround2.x = ccx - display.contentWidth
 	-- object declaration
 	-- -character
 	local sheetData1 = { width=240, height=656, numFrames=3, sheetContentWidth=720, sheetContentHeight=656 }
@@ -39,36 +50,148 @@ local function gameInit()
 	backGround2:insert(mountains2)
 	-- -end mountains
 	-- -ground
-	groundFloor = display.newImageRect("groundFloor.png", 960, 64)
-	groundFloor.x = ccx ; groundFloor.y = (ccy + (ccy/1.1))
+	groundFloor1 = display.newImageRect("groundFloor.png", 960, 64)
+	groundFloor1.x = ccx ; groundFloor1.y = ccy + (ccy/1.1)
+	groundFloor2 = display.newImageRect("groundFloor.png", 960, 64)
+	groundFloor2.x = ccx ; groundFloor2.y = ccy + (ccy/1.1)
+	foreGround1:insert(groundFloor1)
+	foreGround2:insert(groundFloor2)
 	-- -end ground
+	-- -castle
+	castle = display.newImageRect("castle.png", 400, 400)
+	castle.x = ccx*2 ; castle.y = ccy + 41
+	middGround1:insert(castle)
+	middGround2:insert(castle)
+	-- -end castle
+	-- -tree
+	local function treeSpawn(count)
+		for iters = 0, count, 1 do
+			iters = iters + 1
+			local tree = display.newImageRect("tree.png", 128, 256)
+			tree.yScale = 2
+			if (math.random(0, 1) > 0.5) then
+				tree.xScale = -2
+			else
+				tree.xScale = 2
+			end
+			tree.x = 500 * iters * math.random(-3, 3) ; tree.y = ccy-40
+			middGround1:insert(tree)
+		end
+	end
+	treeSpawn(20)
+	-- -end tree
+	-- -enemies
+	local enemyTable = {}
+	local sheetData2 = { width=160, height=240, numFrames=3, sheetContentWidth=480, sheetContentHeight=240 }
+	local enemyT1 = graphics.newImageSheet("goonSheet.png", sheetData2)
+	local enemySequenceData = {
+		{ name = "standing", start = 1, count = 1 },
+		{ name = "walking", frames = {2, 3}, time = 400}
+	}
+	local function enemySpawn(mtype)
+		if (mtype == "T1") then
+			pos = 0 --math.random(-1000, 1000)
+			local enemy = display.newSprite(enemyT1, enemySequenceData)
+			enemy.xScale = 0.5 ; enemy.yScale = 0.5
+			enemy.y = ccy + 140
+			table.insert(enemyTable, enemy)
+			enemy.myName = "T1Enemy"
+			enemy.myPos = pos
+			foreGround1:insert(enemy)
+		else
+			print("gah")
+		end
+	end
+	enemySpawn("T1")
+	local function enemyT1AI()
+		for i = #enemyTable, 1, -1 do
+			object = enemyTable[i]
+			print(object.myPos .. " " .. charPos)
+			objectDistance = object.myPos - charPos
+			print(objectDistance)
+			local distanceCheck = 300
+			if (objectDistance <= distanceCheck and objectDistance >= -distanceCheck) then
+				if objectDistance <= distanceCheck then
+					transition.to(object, {x = object.x + 100, time = math.random(300, 500)})
+					object.myPos = object.myPos + 100
+					object:setSequence("walking")
+					object:play()
+					object.xScale = 0.5
+					print("going right")
+				elseif (objectDistance * -1) <= distanceCheck then
+					transition.to(object, {x = object.x - 100, time = math.random(300, 500)})
+					object.myPos = object.myPos - 100
+					object:setSequence("walking")
+					object:play()
+					object.xScale = -0.5
+					print("going right")
+				end
+			else
+				local randNum = math.random(-100, 100)
+				if randNum >= 0 then
+					object:setSequence("walking")
+					object:play()
+					object.xScale = 0.5
+				elseif randNum <= 0 then
+					object:setSequence("walking")
+					object:play()
+					object.xScale = -0.5
+				end
+				transition.to(object, {x = (object.x + randNum), time = math.random(300, 500)})
+				object.myPos = object.myPos + (randNum)
+			end
+		end
+	end
+	-- -end enemies
 	-- sensor declaration
-	leftTouchSensor = display.newRect(ccx/8, ccy, 480, 1080)
+	leftTouchSensor = display.newRect(ccx/8, ccy, display.contentWidth/5, display.contentHeight)
 	leftTouchSensor.isVisible = false
 	leftTouchSensor.isHitTestable = true
-	rightTouchSensor = display.newRect((ccx*2)-(ccx/8), ccy, 480, 1080)
+	rightTouchSensor = display.newRect((ccx*2)-(ccx/8), ccy, display.contentWidth/5, display.contentHeight)
 	rightTouchSensor.isVisible = false
 	rightTouchSensor.isHitTestable = true
 	-- Image Scrolling Chunk
 	local function moveLeft()
-		backGround1.x = backGround1.x + 5
-		backGround2.x = backGround2.x + 5
+		-- BG
+		charPos = charPos - 10
+		backGround1.x = backGround1.x + 1
+		backGround2.x = backGround2.x + 1
 		if backGround1.x == display.contentWidth * 1 then
 			backGround1.x = display.contentWidth * -1
-		end
-		if backGround2.x == display.contentWidth * 1 then
+		elseif backGround2.x == display.contentWidth * 1 then
 			backGround2.x = display.contentWidth * -1
 		end
+		-- FG
+		foreGround1.x = foreGround1.x + 10
+		foreGround2.x = foreGround2.x + 10
+		if foreGround1.x == display.contentWidth * 1 then
+			foreGround1.x = display.contentWidth * -1
+		elseif foreGround2.x == display.contentWidth * 1 then
+			foreGround2.x = display.contentWidth * -1
+		end
+		middGround1.x = middGround1.x + 8
+		middGround2.x = middGround2.x + 8
 	end
 	local function moveRight()
-		backGround1.x = backGround1.x - 5
-		backGround2.x = backGround2.x - 5
+		--BG
+		charPos = charPos + 10
+		backGround1.x = backGround1.x - 1
+		backGround2.x = backGround2.x - 1
 		if backGround1.x == display.contentWidth * -1 then
 			backGround1.x = display.contentWidth * 1
-		end
-		if backGround2.x == display.contentWidth * -1 then
+		elseif backGround2.x == display.contentWidth * -1 then
 			backGround2.x = display.contentWidth * 1
 		end
+		-- FG
+		foreGround1.x = foreGround1.x - 10
+		foreGround2.x = foreGround2.x - 10
+		if foreGround1.x == display.contentWidth * -1 then
+			foreGround1.x = display.contentWidth * 1
+		elseif foreGround2.x == display.contentWidth * -1 then
+			foreGround2.x = display.contentWidth * 1
+		end
+		middGround1.x = middGround1.x - 8
+		middGround2.x = middGround2.x - 8
 	end
 	local function runFuncLeft (event)
 		if event.phase == "began" then
@@ -93,12 +216,13 @@ local function gameInit()
 		end
 	end
 	-- game event declaration
+	gameLoop = timer.performWithDelay(math.random(1000, 2000), enemyT1AI, 0)
 	leftTouchSensor:addEventListener("touch", runFuncLeft)
 	rightTouchSensor:addEventListener("touch", runFuncRight)
 end
 
 function hideMainMenu()
-	menuPlayButton:removeEventListener("tap", charSelect)
+	menuPlayButton:removeEventListener("tap", optionsMenu)
 	menuGroup.isVisible = false
 end
 
@@ -111,18 +235,23 @@ local function initMainMenu()
 	menuGroup:insert(menuPlayButton)
 	menuOptionsButton = display.newText("Options", ccx, ccy-(ccy*0.25), 0, 0, Verdana, ccy-(ccy*0.9))
 	menuGroup:insert(menuOptionsButton)
-	-- main menu event declaration
-	menuPlayButton:addEventListener("tap", charSelect)
+	-- main menu event declaration 
+	menuOptionsButton:addEventListener("tap", optionsMenu)
+	menuPlayButton:addEventListener("tap", gameInit)
 	-- afterevent conditions
 	saveDataFile = io.open(system.pathForFile("saveData.json", system.DocumentsDirectory))
 	if saveDataFile then
 		menuPlayButton.text = "Resume Game"
-		menuPlayButton:removeEventListener("tap", charSelect)
+		menuPlayButton:removeEventListener("tap", optionsMenu)
 		menuPlayButton:addEventListener("tap", gameInit)
 		saveDataFile:close()
 	else
-		print(system.pathForFile("saveData.json", system.DocumentsDirectory))
+		print(system.pathForFile("saveData.json", system.ResourceDirectory))
 	end
 end
+
+print(display.pixelHeight .. " " .. display.pixelWidth)
+print(system.pathForFile("saveData.json", system.ResourceDirectory))
+
 
 initMainMenu()
