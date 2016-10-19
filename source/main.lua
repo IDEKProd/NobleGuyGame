@@ -97,7 +97,7 @@ local function gameInit()
 			table.insert(enemyTable, enemy)
 			enemy.myName = "T1Enemy"
 			enemy.myPos = pos
-			foreGround1:insert(enemy)
+			middGround1:insert(enemy)
 		else
 			print("gah")
 		end
@@ -110,20 +110,20 @@ local function gameInit()
 			objectDistance = object.myPos - charPos
 			print(objectDistance)
 			local distanceCheck = 300
-			if (objectDistance <= distanceCheck and objectDistance >= -distanceCheck) then
-				if objectDistance <= distanceCheck then
-					transition.to(object, {x = object.x + 100, time = math.random(300, 500)})
-					object.myPos = object.myPos + 100
-					object:setSequence("walking")
-					object:play()
-					object.xScale = 0.5
-					print("going right")
-				elseif (objectDistance * -1) <= distanceCheck then
+			if (objectDistance <= distanceCheck and objectDistance >= (distanceCheck * -1)) then
+				if objectDistance <= distanceCheck and objectDistance >= 0 then
 					transition.to(object, {x = object.x - 100, time = math.random(300, 500)})
 					object.myPos = object.myPos - 100
 					object:setSequence("walking")
 					object:play()
 					object.xScale = -0.5
+					print("going left")
+				elseif objectDistance >= (distanceCheck * -1) and objectDistance <= 0 then
+					transition.to(object, {x = object.x + 100, time = math.random(300, 500)})
+					object.myPos = object.myPos + 100
+					object:setSequence("walking")
+					object:play()
+					object.xScale = 0.5
 					print("going right")
 				end
 			else
@@ -153,7 +153,7 @@ local function gameInit()
 	-- Image Scrolling Chunk
 	local function moveLeft()
 		-- BG
-		charPos = charPos - 10
+		charPos = charPos - 8
 		backGround1.x = backGround1.x + 1
 		backGround2.x = backGround2.x + 1
 		if backGround1.x == display.contentWidth * 1 then
@@ -174,7 +174,7 @@ local function gameInit()
 	end
 	local function moveRight()
 		--BG
-		charPos = charPos + 10
+		charPos = charPos + 8
 		backGround1.x = backGround1.x - 1
 		backGround2.x = backGround2.x - 1
 		if backGround1.x == display.contentWidth * -1 then
