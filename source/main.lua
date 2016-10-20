@@ -41,6 +41,22 @@ local function gameInit()
 	character.x = ccx ; character.y = ccy + (ccy/2.065)
 	character:scale(0.25, 0.25)
 	-- -end character
+	-- -weapons
+	sword = display.newRect(ccx, ccy, 100, 100)
+	function sword:touch(event)
+		if event.phase == "began" then
+			self.markX = self.x
+			self.markY = self.y
+		elseif event.phase == "moved" and self.markX ~= nil then
+			local x = (event.x - event.xStart) + self.markX
+			local y = (event.y - event.yStart) + self.markY
+			self.x, self.y = x, y
+		elseif event.phase == "ended" then
+			self.markX = nil
+			self.markY = nil
+		end
+	end
+	-- -end weapons
 	-- -mountains
 	mountains = display.newImageRect("mountains.png", 960, 540)
 	mountains.x = ccx ; mountains.y = ccy
@@ -88,29 +104,24 @@ local function gameInit()
 		{ name = "standing", start = 1, count = 1 },
 		{ name = "walking", frames = {2, 3}, time = 400}
 	}
-	local function enemySpawn(mtype)
-		if (mtype == "T1") then
-			pos = math.random(-10000, 10000)
-			local enemy = display.newSprite(enemyT1, enemySequenceData)
-			enemy.xScale = 0.5 ; enemy.yScale = 0.5
-			enemy.y = ccy + 140
-			table.insert(enemyTable, enemy)
-			enemy.myName = "T1Enemy"
-			enemy.myPos = pos
-			enemy.x = enemy.myPos
-			middGround1:insert(enemy)
-		else
-			print("gah")
+	local function enemySpawn(mtype, count)
+		for num = 1, count, 1 do
+			if (mtype == "T1") then
+				pos = math.random(-10000, 10000)
+				local enemy = display.newSprite(enemyT1, enemySequenceData)
+				enemy.xScale = 0.5 ; enemy.yScale = 0.5
+				enemy.y = ccy + 140
+				table.insert(enemyTable, enemy)
+				enemy.myName = "T1Enemy"
+				enemy.myPos = pos
+				enemy.x = enemy.myPos
+				middGround1:insert(enemy)
+			else
+				print("gah")
+			end
 		end
 	end
-	enemySpawn("T1")
-	enemySpawn("T1")
-	enemySpawn("T1")
-	enemySpawn("T1")
-	enemySpawn("T1")
-	enemySpawn("T1")
-	enemySpawn("T1")
-	enemySpawn("T1")
+	enemySpawn("T1", 20)
 	local function enemyT1AI()
 		for i = #enemyTable, 1, -1 do
 			object = enemyTable[i]
@@ -225,6 +236,11 @@ local function gameInit()
 			character:play()
 			character.xScale = 0.25
 			Runtime:addEventListener("enterFrame", moveLeft)
+		elseif (event.phase == "moved") then
+			if event.x >= display.contentWidth/8 then
+				character:setSequence("standing")
+				Runtime:removeEventListener("enterFrame", moveLeft)
+			end
 		elseif (event.phase == "ended") then
 			character:setSequence("standing")
 			Runtime:removeEventListener("enterFrame", moveLeft)
@@ -236,6 +252,11 @@ local function gameInit()
 			character:play()
 			character.xScale = -0.25
 			Runtime:addEventListener("enterFrame", moveRight)
+		elseif (event.phase == "moved") then
+			if event.x <= display.contentWidth-(display.contentWidth/8) then
+				character:setSequence("standing")
+				Runtime:removeEventListener("enterFrame", moveRight)
+			end
 		elseif (event.phase == "ended") then
 			character:setSequence("standing")
 			Runtime:removeEventListener("enterFrame", moveRight)
@@ -243,6 +264,7 @@ local function gameInit()
 	end
 	-- game event declaration
 	gameLoop = timer.performWithDelay(math.random(600, 1000), enemyT1AI, 0)
+	sword:addEventListener("touch", sword)
 	leftTouchSensor:addEventListener("touch", runFuncLeft)
 	rightTouchSensor:addEventListener("touch", runFuncRight)
 end
@@ -275,9 +297,5 @@ local function initMainMenu()
 		print(system.pathForFile("saveData.json", system.ResourceDirectory))
 	end
 end
-
-print(display.pixelHeight .. " " .. display.pixelWidth)
-print(system.pathForFile("saveData.json", system.ResourceDirectory))
-
 
 initMainMenu()
