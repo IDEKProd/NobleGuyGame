@@ -74,7 +74,7 @@ local function gameInit()
 			else
 				tree.xScale = 2
 			end
-			tree.x = 500 * iters * math.random(-3, 3) ; tree.y = ccy-40
+			tree.x = math.random(-10000, 10000) ; tree.y = ccy-40
 			middGround1:insert(tree)
 		end
 	end
@@ -90,25 +90,31 @@ local function gameInit()
 	}
 	local function enemySpawn(mtype)
 		if (mtype == "T1") then
-			pos = 0 --math.random(-1000, 1000)
+			pos = math.random(-10000, 10000)
 			local enemy = display.newSprite(enemyT1, enemySequenceData)
 			enemy.xScale = 0.5 ; enemy.yScale = 0.5
 			enemy.y = ccy + 140
 			table.insert(enemyTable, enemy)
 			enemy.myName = "T1Enemy"
 			enemy.myPos = pos
+			enemy.x = enemy.myPos
 			middGround1:insert(enemy)
 		else
 			print("gah")
 		end
 	end
 	enemySpawn("T1")
+	enemySpawn("T1")
+	enemySpawn("T1")
+	enemySpawn("T1")
+	enemySpawn("T1")
+	enemySpawn("T1")
+	enemySpawn("T1")
+	enemySpawn("T1")
 	local function enemyT1AI()
 		for i = #enemyTable, 1, -1 do
 			object = enemyTable[i]
-			print(object.myPos .. " " .. charPos)
 			objectDistance = object.myPos - charPos
-			print(objectDistance)
 			local distanceCheck = 300
 			if (objectDistance <= distanceCheck and objectDistance >= (distanceCheck * -1)) then
 				if objectDistance <= distanceCheck and objectDistance >= 0 then
@@ -117,14 +123,12 @@ local function gameInit()
 					object:setSequence("walking")
 					object:play()
 					object.xScale = -0.5
-					print("going left")
 				elseif objectDistance >= (distanceCheck * -1) and objectDistance <= 0 then
 					transition.to(object, {x = object.x + 100, time = math.random(300, 500)})
 					object.myPos = object.myPos + 100
 					object:setSequence("walking")
 					object:play()
 					object.xScale = 0.5
-					print("going right")
 				end
 			else
 				local randNum = math.random(-100, 100)
@@ -153,45 +157,67 @@ local function gameInit()
 	-- Image Scrolling Chunk
 	local function moveLeft()
 		-- BG
-		charPos = charPos - 8
-		backGround1.x = backGround1.x + 1
-		backGround2.x = backGround2.x + 1
-		if backGround1.x == display.contentWidth * 1 then
-			backGround1.x = display.contentWidth * -1
-		elseif backGround2.x == display.contentWidth * 1 then
-			backGround2.x = display.contentWidth * -1
+		print(charPos, character.x)
+		if (charPos <= -10000) then
+			if character.x <= 20 then
+				print("at edge")
+			else
+				character.x = character.x - 10
+			end
+		elseif character.x < 480 then
+			character.x = character.x + 10
+		else
+			charPos = charPos - 8
+			backGround1.x = backGround1.x + 1
+			backGround2.x = backGround2.x + 1
+			if backGround1.x == display.contentWidth * 1 then
+				backGround1.x = display.contentWidth * -1
+			elseif backGround2.x == display.contentWidth * 1 then
+				backGround2.x = display.contentWidth * -1
+			end
+			-- FG
+			foreGround1.x = foreGround1.x + 10
+			foreGround2.x = foreGround2.x + 10
+			if foreGround1.x == display.contentWidth * 1 then
+				foreGround1.x = display.contentWidth * -1
+			elseif foreGround2.x == display.contentWidth * 1 then
+				foreGround2.x = display.contentWidth * -1
+			end
+			middGround1.x = middGround1.x + 8
+			middGround2.x = middGround2.x + 8
 		end
-		-- FG
-		foreGround1.x = foreGround1.x + 10
-		foreGround2.x = foreGround2.x + 10
-		if foreGround1.x == display.contentWidth * 1 then
-			foreGround1.x = display.contentWidth * -1
-		elseif foreGround2.x == display.contentWidth * 1 then
-			foreGround2.x = display.contentWidth * -1
-		end
-		middGround1.x = middGround1.x + 8
-		middGround2.x = middGround2.x + 8
 	end
 	local function moveRight()
 		--BG
-		charPos = charPos + 8
-		backGround1.x = backGround1.x - 1
-		backGround2.x = backGround2.x - 1
-		if backGround1.x == display.contentWidth * -1 then
-			backGround1.x = display.contentWidth * 1
-		elseif backGround2.x == display.contentWidth * -1 then
-			backGround2.x = display.contentWidth * 1
+		print(charPos, character.x)
+		if (charPos >= 10000) then
+			if character.x >= 940 then
+				print("at edge")
+			else
+				character.x = character.x + 10
+			end
+		elseif character.x > 480 then
+			character.x = character.x - 10
+		else
+			charPos = charPos + 8
+			backGround1.x = backGround1.x - 1
+			backGround2.x = backGround2.x - 1
+			if backGround1.x == display.contentWidth * -1 then
+				backGround1.x = display.contentWidth * 1
+			elseif backGround2.x == display.contentWidth * -1 then
+				backGround2.x = display.contentWidth * 1
+			end
+			-- FG
+			foreGround1.x = foreGround1.x - 10
+			foreGround2.x = foreGround2.x - 10
+			if foreGround1.x == display.contentWidth * -1 then
+				foreGround1.x = display.contentWidth * 1
+			elseif foreGround2.x == display.contentWidth * -1 then
+				foreGround2.x = display.contentWidth * 1
+			end
+			middGround1.x = middGround1.x - 8
+			middGround2.x = middGround2.x - 8
 		end
-		-- FG
-		foreGround1.x = foreGround1.x - 10
-		foreGround2.x = foreGround2.x - 10
-		if foreGround1.x == display.contentWidth * -1 then
-			foreGround1.x = display.contentWidth * 1
-		elseif foreGround2.x == display.contentWidth * -1 then
-			foreGround2.x = display.contentWidth * 1
-		end
-		middGround1.x = middGround1.x - 8
-		middGround2.x = middGround2.x - 8
 	end
 	local function runFuncLeft (event)
 		if event.phase == "began" then
@@ -216,7 +242,7 @@ local function gameInit()
 		end
 	end
 	-- game event declaration
-	gameLoop = timer.performWithDelay(math.random(1000, 2000), enemyT1AI, 0)
+	gameLoop = timer.performWithDelay(math.random(600, 1000), enemyT1AI, 0)
 	leftTouchSensor:addEventListener("touch", runFuncLeft)
 	rightTouchSensor:addEventListener("touch", runFuncRight)
 end
