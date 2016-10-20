@@ -164,8 +164,8 @@ local function gameInit()
 			else
 				character.x = character.x - 10
 			end
-		elseif character.x < 480 then
-			character.x = character.x + 10
+		elseif character.x > 480 then
+			character.x = character.x - 10
 		else
 			charPos = charPos - 8
 			backGround1.x = backGround1.x + 1
@@ -196,8 +196,8 @@ local function gameInit()
 			else
 				character.x = character.x + 10
 			end
-		elseif character.x > 480 then
-			character.x = character.x - 10
+		elseif character.x < 480 then
+			character.x = character.x + 10
 		else
 			charPos = charPos + 8
 			backGround1.x = backGround1.x - 1
