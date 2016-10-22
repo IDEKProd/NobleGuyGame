@@ -15,8 +15,19 @@ local function getcharPos(num)
 	return pos
 end
 
+local function showControls()
+	leftBox = display.newRect(ccx/8, ccy, display.contentWidth/8, display.contentWidth)
+	leftText = display.newText("Move\nLeft", ccx/8, ccy)
+	leftText:setFillColor(0, 0, 0)
+	rightBox = display.newRect(ccx*2 - (ccx/8), ccy, display.contentWidth/8, display.contentWidth)
+	rightText = display.newText("Move\nRight", ccx*2)
+	lowerBox = display.newRect()
+	lowerText = display.newText()
+end
+
 local function gameInit()
 	hideMainMenu()
+	showControls()
 	backGround1 = display.newGroup()
 	backGround1.x = ccx
 	backGround2 = display.newGroup()
@@ -42,7 +53,9 @@ local function gameInit()
 	character:scale(0.25, 0.25)
 	-- -end character
 	-- -weapons
-	sword = display.newRect(ccx, ccy, 100, 100)
+	sword = display.newImageRect("swordBase.png", 64, 64)
+	sword.xScale = 1.5 ; sword.yScale = 1.5
+	sword.x = ccx ; sword.y = ccy
 	function sword:touch(event)
 		if event.phase == "began" then
 			self.markX = self.x
