@@ -1,4 +1,6 @@
 local json = require("json")
+local game = require("game")
+system.activate("multitouch")
 
 local ccx = display.contentCenterX
 local ccy = display.contentCenterY
@@ -10,9 +12,10 @@ local function optionsMenu()
 	print("It works")
 end
 
-local function getcharPos(num)
-	pos = ccx + num
-	return pos
+local function gameLoop()
+	if character.health <= 0 then
+		gameOverSequence()
+	end
 end
 
 local function showControls()
@@ -27,7 +30,7 @@ end
 
 local function gameInit()
 	hideMainMenu()
-	showControls()
+	--showControls()
 	backGround1 = display.newGroup()
 	backGround1.x = ccx
 	backGround2 = display.newGroup()
@@ -41,6 +44,11 @@ local function gameInit()
 	foreGround2 = display.newGroup()
 	foreGround2.x = ccx - display.contentWidth
 	-- object declaration
+	-- -counters
+	-- -health
+	local healthCounterText = display.newText(100, ccx, ccy/8)
+	-- -end health
+	-- -end counters
 	-- -character
 	local sheetData1 = { width=240, height=656, numFrames=3, sheetContentWidth=720, sheetContentHeight=656 }
 	local knightBase = graphics.newImageSheet( "knightSheet.png", sheetData1 )
@@ -51,11 +59,14 @@ local function gameInit()
 	character = display.newSprite(knightBase, characterSequenceData)
 	character.x = ccx ; character.y = ccy + (ccy/2.065)
 	character:scale(0.25, 0.25)
+	character.myName = character
+	character.health = 100
 	-- -end character
 	-- -weapons
 	sword = display.newImageRect("swordBase.png", 64, 64)
 	sword.xScale = 1.5 ; sword.yScale = 1.5
 	sword.x = ccx ; sword.y = ccy
+	sword.myName = "sword"
 	function sword:touch(event)
 		if event.phase == "began" then
 			self.markX = self.x
@@ -107,7 +118,7 @@ local function gameInit()
 			middGround1:insert(tree)
 		end
 	end
-	treeSpawn(20)
+	treeSpawn(40)
 	-- -end tree
 	-- -enemies
 	local enemyTable = {}
@@ -126,30 +137,32 @@ local function gameInit()
 				enemy.y = ccy + 140
 				table.insert(enemyTable, enemy)
 				enemy.myName = "T1Enemy"
-				enemy.myPos = pos
-				enemy.x = enemy.myPos
+				enemy.health = 20
+				enemy.x = pos
 				middGround1:insert(enemy)
 			else
 				print("gah")
 			end
 		end
 	end
-	enemySpawn("T1", 20)
+	enemySpawn("T1", 1)
 	local function enemyT1AI()
 		for i = #enemyTable, 1, -1 do
 			object = enemyTable[i]
-			objectDistance = object.myPos - charPos
+			objectDistance = (middGround1.x + object.x) - character.x
 			local distanceCheck = 300
+			if (objectDistance <= 70 and objectDistance >= -70) then
+				character.health = character.health - 10
+				healthCounterText.text = character.health
+			end
 			if (objectDistance <= distanceCheck and objectDistance >= (distanceCheck * -1)) then
 				if objectDistance <= distanceCheck and objectDistance >= 0 then
 					transition.to(object, {x = object.x - 100, time = math.random(300, 500)})
-					object.myPos = object.myPos - 100
 					object:setSequence("walking")
 					object:play()
 					object.xScale = -0.5
 				elseif objectDistance >= (distanceCheck * -1) and objectDistance <= 0 then
 					transition.to(object, {x = object.x + 100, time = math.random(300, 500)})
-					object.myPos = object.myPos + 100
 					object:setSequence("walking")
 					object:play()
 					object.xScale = 0.5
@@ -166,8 +179,8 @@ local function gameInit()
 					object.xScale = -0.5
 				end
 				transition.to(object, {x = (object.x + randNum), time = math.random(300, 500)})
-				object.myPos = object.myPos + (randNum)
 			end
+		print(middGround1.x + object.x, (middGround1.x + object.x) - character.x)
 		end
 	end
 	-- -end enemies
@@ -181,7 +194,6 @@ local function gameInit()
 	-- Image Scrolling Chunk
 	local function moveLeft()
 		-- BG
-		print(charPos, character.x)
 		if (charPos <= -10000) then
 			if character.x <= 20 then
 				print("at edge")
@@ -213,7 +225,6 @@ local function gameInit()
 	end
 	local function moveRight()
 		--BG
-		print(charPos, character.x)
 		if (charPos >= 10000) then
 			if character.x >= 940 then
 				print("at edge")
@@ -276,10 +287,11 @@ local function gameInit()
 		end
 	end
 	-- game event declaration
-	gameLoop = timer.performWithDelay(math.random(600, 1000), enemyT1AI, 0)
+	enemyTimer = timer.performWithDelay(math.random(600, 1000), enemyT1AI, 0)
 	sword:addEventListener("touch", sword)
 	leftTouchSensor:addEventListener("touch", runFuncLeft)
 	rightTouchSensor:addEventListener("touch", runFuncRight)
+	Runtime:addEventListener("enterFrame", gameLoop)
 end
 
 function hideMainMenu()
@@ -288,6 +300,8 @@ function hideMainMenu()
 end
 
 local function initMainMenu()
+	menuBG = display.newImageRect("BG.png", 970, 540)
+	menuBG.x = ccx ; menuBG.y = ccy
 	menuGroup = display.newGroup()
 	menuTitle = display.newText("Noble", ccx, ccy-(ccy*0.75), 0, 0, Verdana, ccy-(ccy*0.75))
 	menuGroup:insert(menuTitle)
