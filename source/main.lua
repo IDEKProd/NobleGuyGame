@@ -1,10 +1,13 @@
 local json = require("json")
 local game = require("game")
-system.activate("multitouch")
+--system.activate("multitouch")
 
 local ccx = display.contentCenterX
 local ccy = display.contentCenterY
+local enemyTable = {}
+local attacking = false
 local charPos = 0
+local playing = true
 
 -- internal function declaration
 local function optionsMenu()
@@ -13,8 +16,22 @@ local function optionsMenu()
 end
 
 local function gameLoop()
+	for i = #enemyTable, 1, -1 do
+		local object = enemyTable[i]
+		local objectDistance = (middGround1.x + object.x) - character.x
+		print(objectDistance)
+		if (objectDistance <= 70 and objectDistance >= -70) then
+			character.health = character.health - 0.5
+			if character.health == math.floor(character.health) then
+				healthCounterText.text = character.health
+			end
+		end
+	end
 	if character.health <= 0 then
 		gameOverSequence()
+		playing = false
+		enemyTimer = nil
+		Runtime:removeEventListener("enterFrame", gameLoop)
 	end
 end
 
@@ -29,6 +46,22 @@ local function showControls()
 end
 
 local function gameInit()
+	function gameOverSequence()
+		-- removing everything
+		enemyTimer = nil
+		leftTouchSensor:removeEventListener("touch", runFuncLeft)
+		rightTouchSensor:removeEventListener("touch", runFuncRight)
+		bottomTouchSensor:removeEventListener("touch", runFuncBottom)
+		enemyT1AI = nil
+		backGround1 = nil ; backGround2 = nil
+		middGround1 = nil ; middGround2 = nil
+		foreGround1 = nil ; foreGround2 = nil
+		healthCounterText = nil
+		sheetData1 = nil ; sheetData2 = nil
+		knightBase = nil ; character = nil
+		characterSequenceData = nil
+		sword = nil ; swordBase = nil
+	end
 	hideMainMenu()
 	--showControls()
 	backGround1 = display.newGroup()
@@ -46,40 +79,29 @@ local function gameInit()
 	-- object declaration
 	-- -counters
 	-- -health
-	local healthCounterText = display.newText(100, ccx, ccy/8)
+	healthCounterText = display.newText(100, ccx, ccy/8)
 	-- -end health
 	-- -end counters
 	-- -character
-	local sheetData1 = { width=240, height=656, numFrames=3, sheetContentWidth=720, sheetContentHeight=656 }
-	local knightBase = graphics.newImageSheet( "knightSheet.png", sheetData1 )
-	local characterSequenceData = {
+	sheetData1 = { width=240, height=656, numFrames=3, sheetContentWidth=720, sheetContentHeight=656 }
+	knightBase = graphics.newImageSheet( "knightSheet.png", sheetData1 )
+	characterSequenceData = {
 		{ name = "standing", start = 1, count = 1 },
 		{ name = "walking", frames = {2, 3}, time = 300}
 	}
 	character = display.newSprite(knightBase, characterSequenceData)
 	character.x = ccx ; character.y = ccy + (ccy/2.065)
 	character:scale(0.25, 0.25)
-	character.myName = character
+	character.myName = "character"
 	character.health = 100
 	-- -end character
 	-- -weapons
 	sword = display.newImageRect("swordBase.png", 64, 64)
-	sword.xScale = 1.5 ; sword.yScale = 1.5
-	sword.x = ccx ; sword.y = ccy
+	sword.xScale = 1 ; sword.yScale = 1
+	sword.rotation = 45
+	sword.x = ccx ; sword.y = ccy*1.45
 	sword.myName = "sword"
-	function sword:touch(event)
-		if event.phase == "began" then
-			self.markX = self.x
-			self.markY = self.y
-		elseif event.phase == "moved" and self.markX ~= nil then
-			local x = (event.x - event.xStart) + self.markX
-			local y = (event.y - event.yStart) + self.markY
-			self.x, self.y = x, y
-		elseif event.phase == "ended" then
-			self.markX = nil
-			self.markY = nil
-		end
-	end
+	sword.isVisible = false
 	-- -end weapons
 	-- -mountains
 	mountains = display.newImageRect("mountains.png", 960, 540)
@@ -104,7 +126,7 @@ local function gameInit()
 	middGround2:insert(castle)
 	-- -end castle
 	-- -tree
-	local function treeSpawn(count)
+	function treeSpawn(count)
 		for iters = 0, count, 1 do
 			iters = iters + 1
 			local tree = display.newImageRect("tree.png", 128, 256)
@@ -121,78 +143,84 @@ local function gameInit()
 	treeSpawn(40)
 	-- -end tree
 	-- -enemies
-	local enemyTable = {}
-	local sheetData2 = { width=160, height=240, numFrames=3, sheetContentWidth=480, sheetContentHeight=240 }
-	local enemyT1 = graphics.newImageSheet("goonSheet.png", sheetData2)
-	local enemySequenceData = {
+	sheetData2 = { width=160, height=240, numFrames=3, sheetContentWidth=480, sheetContentHeight=240 }
+	enemyT1 = graphics.newImageSheet("goonSheet.png", sheetData2)
+	enemySequenceData = {
 		{ name = "standing", start = 1, count = 1 },
 		{ name = "walking", frames = {2, 3}, time = 400}
 	}
-	local function enemySpawn(mtype, count)
+	function enemySpawn(mtype, count)
 		for num = 1, count, 1 do
 			if (mtype == "T1") then
-				pos = math.random(-10000, 10000)
+				pos = math.random(-9000, 9000)
 				local enemy = display.newSprite(enemyT1, enemySequenceData)
 				enemy.xScale = 0.5 ; enemy.yScale = 0.5
 				enemy.y = ccy + 140
 				table.insert(enemyTable, enemy)
 				enemy.myName = "T1Enemy"
 				enemy.health = 20
-				enemy.x = pos
+				if pos > 0 then
+					enemy.x = pos + 1000
+				elseif pos < 0 then
+					enemy.x = pos - 1000
+				else
+					enemy.x = math.random(-10000, -1000)
+				end
 				middGround1:insert(enemy)
 			else
 				print("gah")
 			end
 		end
 	end
-	enemySpawn("T1", 1)
-	local function enemyT1AI()
-		for i = #enemyTable, 1, -1 do
-			object = enemyTable[i]
-			objectDistance = (middGround1.x + object.x) - character.x
-			local distanceCheck = 300
-			if (objectDistance <= 70 and objectDistance >= -70) then
-				character.health = character.health - 10
-				healthCounterText.text = character.health
-			end
-			if (objectDistance <= distanceCheck and objectDistance >= (distanceCheck * -1)) then
-				if objectDistance <= distanceCheck and objectDistance >= 0 then
-					transition.to(object, {x = object.x - 100, time = math.random(300, 500)})
-					object:setSequence("walking")
-					object:play()
-					object.xScale = -0.5
-				elseif objectDistance >= (distanceCheck * -1) and objectDistance <= 0 then
-					transition.to(object, {x = object.x + 100, time = math.random(300, 500)})
-					object:setSequence("walking")
-					object:play()
-					object.xScale = 0.5
+	enemySpawn("T1", 20)
+	function enemyT1AI()
+		if playing then
+			for i = #enemyTable, 1, -1 do
+				object = enemyTable[i]
+				objectDistance = (middGround1.x + object.x) - character.x
+				local distanceCheck = 300
+				if (objectDistance <= distanceCheck and objectDistance >= (distanceCheck * -1)) then
+					if objectDistance <= distanceCheck and objectDistance >= 0 then
+						transition.to(object, {x = object.x - 100, time = math.random(300, 500)})
+						object:setSequence("walking")
+						object:play()
+						object.xScale = -0.5
+					elseif objectDistance >= (distanceCheck * -1) and objectDistance <= 0 then
+						transition.to(object, {x = object.x + 100, time = math.random(300, 500)})
+						object:setSequence("walking")
+						object:play()
+						object.xScale = 0.5
+					end
+				else
+					local randNum = math.random(-100, 100)
+					if randNum >= 0 then
+						object:setSequence("walking")
+						object:play()
+						object.xScale = 0.5
+					elseif randNum <= 0 then
+						object:setSequence("walking")
+						object:play()
+						object.xScale = -0.5
+					end
+					transition.to(object, {x = (object.x + randNum), time = math.random(300, 500)})
 				end
-			else
-				local randNum = math.random(-100, 100)
-				if randNum >= 0 then
-					object:setSequence("walking")
-					object:play()
-					object.xScale = 0.5
-				elseif randNum <= 0 then
-					object:setSequence("walking")
-					object:play()
-					object.xScale = -0.5
-				end
-				transition.to(object, {x = (object.x + randNum), time = math.random(300, 500)})
+			--print(middGround1.x + object.x, (middGround1.x + object.x) - character.x)
 			end
-		print(middGround1.x + object.x, (middGround1.x + object.x) - character.x)
 		end
 	end
 	-- -end enemies
 	-- sensor declaration
-	leftTouchSensor = display.newRect(ccx/8, ccy, display.contentWidth/5, display.contentHeight)
+	leftTouchSensor = display.newRect(ccx/8, ccy*0.8, display.contentWidth/8, display.contentHeight*0.8)
 	leftTouchSensor.isVisible = false
 	leftTouchSensor.isHitTestable = true
-	rightTouchSensor = display.newRect((ccx*2)-(ccx/8), ccy, display.contentWidth/5, display.contentHeight)
+	rightTouchSensor = display.newRect((ccx*2)-(ccx/8), ccy*0.8, display.contentWidth/8, display.contentHeight*0.8)
 	rightTouchSensor.isVisible = false
 	rightTouchSensor.isHitTestable = true
+	bottomTouchSensor = display.newRect(ccx, ccy*1.8, display.contentWidth, display.contentHeight/5)
+	bottomTouchSensor.isVisible = false
+	bottomTouchSensor.isHitTestable = true
 	-- Image Scrolling Chunk
-	local function moveLeft()
+	function moveLeft()
 		-- BG
 		if (charPos <= -10000) then
 			if character.x <= 20 then
@@ -223,7 +251,7 @@ local function gameInit()
 			middGround2.x = middGround2.x + 8
 		end
 	end
-	local function moveRight()
+	function moveRight()
 		--BG
 		if (charPos >= 10000) then
 			if character.x >= 940 then
@@ -254,7 +282,7 @@ local function gameInit()
 			middGround2.x = middGround2.x - 8
 		end
 	end
-	local function runFuncLeft (event)
+	function runFuncLeft (event)
 		if event.phase == "began" then
 			character:setSequence("walking")
 			character:play()
@@ -269,15 +297,17 @@ local function gameInit()
 			character:setSequence("standing")
 			Runtime:removeEventListener("enterFrame", moveLeft)
 		end
+		sword.rotation = 225
+		sword.x = ccx/1.2 ; sword.y = ccy*1.45
 	end
-	local function runFuncRight (event)
+	function runFuncRight (event)
 		if event.phase == "began" then
 			character:setSequence("walking")
 			character:play()
 			character.xScale = -0.25
 			Runtime:addEventListener("enterFrame", moveRight)
 		elseif (event.phase == "moved") then
-			if event.x <= display.contentWidth-(display.contentWidth/8) then
+			if event.x < display.contentWidth-(display.contentWidth/8) then
 				character:setSequence("standing")
 				Runtime:removeEventListener("enterFrame", moveRight)
 			end
@@ -285,12 +315,23 @@ local function gameInit()
 			character:setSequence("standing")
 			Runtime:removeEventListener("enterFrame", moveRight)
 		end
+		sword.rotation = 45
+		sword.x = ccx*1.175 ; sword.y = ccy*1.45
+	end
+	function runFuncBottom(event)
+		attacking = true
+		if event.phase == "began" then
+			sword.isVisible = true
+		end
+		if event.phase == "ended" then
+			sword.isVisible = false
+		end
 	end
 	-- game event declaration
 	enemyTimer = timer.performWithDelay(math.random(600, 1000), enemyT1AI, 0)
-	sword:addEventListener("touch", sword)
 	leftTouchSensor:addEventListener("touch", runFuncLeft)
 	rightTouchSensor:addEventListener("touch", runFuncRight)
+	bottomTouchSensor:addEventListener("touch", runFuncBottom)
 	Runtime:addEventListener("enterFrame", gameLoop)
 end
 
